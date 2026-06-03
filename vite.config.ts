@@ -16,10 +16,21 @@ export default defineConfig({
     // Split vendor libraries into separate chunks for better caching
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom", "react-router-dom"],
-          i18n: ["i18next", "react-i18next", "i18next-browser-languagedetector"],
-          ui: ["lucide-react"],
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("react") ||
+              id.includes("react-router-dom")
+            ) {
+              return "vendor";
+            }
+            if (id.includes("i18next")) {
+              return "i18n";
+            }
+            if (id.includes("lucide-react")) {
+              return "ui";
+            }
+          }
         },
       },
     },

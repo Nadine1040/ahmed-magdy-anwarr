@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { sendBookingEmail } from '@/services/emailService';
 import { useInView, useMouseGlow, useIsMobile } from '@/hooks/useScrollAnimation';
 import { useSEO } from '@/hooks/useSEO';
 
@@ -131,31 +132,46 @@ export default function BookingPage() {
       return;
     }
 
-    const { error: supaError } = await supabase.from('bookings').insert({
-      full_name: form.full_name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim() || null,
-      session_type: form.session_type,
-      preferred_date: form.preferred_date || null,
-      message: form.message.trim() || null,
-    });
+    try {
+      // 1. Persist booking in Supabase
+      const { error: supaError } = await supabase.from('bookings').insert({
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || null,
+        session_type: form.session_type,
+        preferred_date: form.preferred_date || null,
+        message: form.message.trim() || null,
+      });
 
-    setLoading(false);
+      if (supaError) {
+        setError(t('booking_error_generic'));
+        return;
+      }
 
-    if (supaError) {
+      // 2. Send confirmation email via EmailJS
+      await sendBookingEmail({
+        fullName: form.full_name,
+        phone: form.phone,
+        email: form.email,
+        sessionType: form.session_type,
+        preferredDate: form.preferred_date,
+        message: form.message,
+      });
+
+      setSubmitted(true);
+      setForm({
+        full_name: '',
+        phone: '',
+        email: '',
+        session_type: '',
+        preferred_date: '',
+        message: '',
+      });
+    } catch {
       setError(t('booking_error_generic'));
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setSubmitted(true);
-    setForm({
-      full_name: '',
-      phone: '',
-      email: '',
-      session_type: '',
-      preferred_date: '',
-      message: '',
-    });
   };
 
   const phoneNumber = '201098945682';

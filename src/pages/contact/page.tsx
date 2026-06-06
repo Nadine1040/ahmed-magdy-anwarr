@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { sendContactEmail } from '@/services/emailService';
 import { useInView, useStaggerAnimation, useMouseGlow, useIsMobile } from '@/hooks/useScrollAnimation';
 import { useSEO } from '@/hooks/useSEO';
 
@@ -104,20 +105,34 @@ export default function ContactPage() {
     setSubmitting(true);
     setStatus('idle');
 
-    const { error } = await supabase.from('bookings').insert({
-      full_name: formData.name,
-      phone: formData.phone,
-      session_type: 'General Inquiry',
-      message: formData.message,
-    });
+    try {
+      // 1. Persist in Supabase
+      const { error } = await supabase.from('bookings').insert({
+        full_name: formData.name,
+        phone: formData.phone,
+        session_type: 'General Inquiry',
+        message: formData.message,
+      });
 
-    if (error) {
-      setStatus('error');
-    } else {
+      if (error) {
+        setStatus('error');
+        return;
+      }
+
+      // 2. Send email via EmailJS
+      await sendContactEmail({
+        name: formData.name,
+        phone: formData.phone,
+        message: formData.message,
+      });
+
       setStatus('success');
       setFormData({ name: '', phone: '', message: '' });
+    } catch {
+      setStatus('error');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (

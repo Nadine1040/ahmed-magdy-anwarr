@@ -29,9 +29,8 @@ function AnimatedSection({ children, delay = 0, className = '' }: { children: Re
   return (
     <div
       ref={ref}
-      className={`transition-all duration-1000 ease-out ${className} ${
-        isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-      }`}
+      className={`transition-all duration-1000 ease-out ${className} ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+        }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
@@ -42,7 +41,7 @@ function AnimatedSection({ children, delay = 0, className = '' }: { children: Re
 export default function ContactPage() {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
+  const [formData, setFormData] = useState({ full_name: '', phone: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -100,7 +99,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.message.trim()) return;
+    if (!formData.full_name.trim() || !formData.phone.trim() || !formData.message.trim()) return;
 
     setSubmitting(true);
     setStatus('idle');
@@ -108,7 +107,7 @@ export default function ContactPage() {
     try {
       // 1. Persist in Supabase
       const { error } = await supabase.from('bookings').insert({
-        full_name: formData.name,
+        full_name: formData.full_name,
         phone: formData.phone,
         session_type: 'General Inquiry',
         message: formData.message,
@@ -121,13 +120,13 @@ export default function ContactPage() {
 
       // 2. Send email via EmailJS
       await sendContactEmail({
-        name: formData.name,
+        full_name: formData.full_name,
         phone: formData.phone,
         message: formData.message,
       });
 
       setStatus('success');
-      setFormData({ name: '', phone: '', message: '' });
+      setFormData({ full_name: '', phone: '', message: '' });
     } catch {
       setStatus('error');
     } finally {
@@ -316,8 +315,8 @@ export default function ContactPage() {
                     </label>
                     <input
                       type="text"
-                      name="name"
-                      value={formData.name}
+                      name="full_name"
+                      value={formData.full_name}
                       onChange={handleChange}
                       required
                       placeholder={t('contact_formNamePlaceholder')}

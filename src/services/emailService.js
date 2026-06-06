@@ -40,8 +40,8 @@ function assertEnv(...values) {
   if (missing.length) {
     throw new Error(
       '[emailService] Missing required environment variables. ' +
-        'Check your .env file and ensure VITE_EMAILJS_SERVICE_ID, ' +
-        'VITE_EMAILJS_BOOKING_TEMPLATE, and VITE_EMAILJS_CONTACT_TEMPLATE are set.'
+      'Check your .env file and ensure VITE_EMAILJS_SERVICE_ID, ' +
+      'VITE_EMAILJS_BOOKING_TEMPLATE, and VITE_EMAILJS_CONTACT_TEMPLATE are set.'
     );
   }
 }
@@ -68,13 +68,19 @@ function assertEnv(...values) {
 export async function sendBookingEmail(fields) {
   assertEnv(SERVICE_ID, BOOKING_TEMPLATE_ID);
 
+  const nameVal = (fields.fullName || fields.full_name || fields.name)?.trim() ?? '';
   // Keys MUST match the {{variable}} names inside your EmailJS template exactly
+  // We send both snake_case and camelCase variables to support any template setup
   const templateParams = {
-    full_name: fields.fullName?.trim() ?? '',
+    name: nameVal,
+    full_name: nameVal,
+    fullName: nameVal,
     phone: fields.phone?.trim() ?? '',
     email: fields.email?.trim() || '—',
-    session_type: fields.sessionType || '—',
-    preferred_date: fields.preferredDate || '—',
+    session_type: fields.sessionType || fields.session_type || '—',
+    sessionType: fields.sessionType || fields.session_type || '—',
+    preferred_date: fields.preferredDate || fields.preferred_date || '—',
+    preferredDate: fields.preferredDate || fields.preferred_date || '—',
     message: fields.message?.trim() || '—',
   };
 
@@ -85,10 +91,12 @@ export async function sendBookingEmail(fields) {
  * Send a "Contact" email via EmailJS.
  *
  * Template variables expected in your EmailJS template:
- *   {{name}}, {{phone}}, {{message}}
+ *   {{name}} or {{full_name}} or {{fullName}}, {{phone}}, {{message}}
  *
  * @param {{
- *   name: string,
+ *   name?: string,
+ *   full_name?: string,
+ *   fullName?: string,
  *   phone: string,
  *   message: string,
  * }} fields
@@ -97,8 +105,11 @@ export async function sendBookingEmail(fields) {
 export async function sendContactEmail(fields) {
   assertEnv(SERVICE_ID, CONTACT_TEMPLATE_ID);
 
+  const nameVal = (fields.full_name || fields.fullName || fields.name)?.trim() ?? '';
   const templateParams = {
-    name: fields.name?.trim() ?? '',
+    name: nameVal,
+    full_name: nameVal,
+    fullName: nameVal,
     phone: fields.phone?.trim() ?? '',
     message: fields.message?.trim() ?? '',
   };
